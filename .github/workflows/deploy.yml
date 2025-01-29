@@ -31,7 +31,7 @@ jobs:
             cd /home/ubuntu/Helpops
             mv k8s /home/ubuntu/website/
             mv website3.0 /home/ubuntu/website/
-            cd /home/ubuntu/website/k8s
+            cd /home/ubuntu/website
             
             
             kubectl apply -f deployment.yml
