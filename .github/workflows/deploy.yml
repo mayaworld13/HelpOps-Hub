@@ -1,0 +1,24 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n default
