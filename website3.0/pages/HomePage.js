@@ -299,14 +299,14 @@ async   function func() {
               theme ? "text-[#63B5C3] " : "text-white"
             } text-[85px] max-lg:text-7xl max-sm:text-6xl max-[420px]:text-5xl max-sm:text-center mb-5 font-bold transition-colors duration-500`}
           >
-            HelpOps-Hub
+            HelpOps-maya
           </h1>
           <p
             className={`${
               theme ? "text-black " : "text-white"
             } ubuntu  max-[420px]:p-4 font-extralight max-sm:text-center text-4xl max-sm:text-3xl max-[420px]:text-2xl w-96 mb-5 transition-colors duration-500`}
           >
-            Ensuring You Never Get Stuck In DevOps Again!
+            Your Ultimate DevOps Community
           </p>
           <button
               className={`${
