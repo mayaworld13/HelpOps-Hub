@@ -14,7 +14,7 @@
 <a name="Welcome to HelpOps-Hub "></a>
 
 # Welcome to HelpOps-Hub 👋
-**HelpOps-Hub** is an open-source DevOps platform designed to connect professionals, provide insightful resources, and enable collaborative problem-solving. It serves as a centralized Q&A hub where developers, engineers, and teams can share knowledge, troubleshoot issues, and contribute to an ever-growing knowledge base of DevOps topics.
+**HelpOps-Hub** is an open-source DevOps platform designed by mayank to connect professionals, provide insightful resources, and enable collaborative problem-solving. It serves as a centralized Q&A hub where developers, engineers, and teams can share knowledge, troubleshoot issues, and contribute to an ever-growing knowledge base of DevOps topics.
 
 <!-- Outreach section -->
 
