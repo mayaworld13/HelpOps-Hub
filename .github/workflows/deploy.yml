@@ -51,7 +51,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: deploy on k3s 
+      - name: Deploy on k3s 
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
@@ -60,21 +60,21 @@ jobs:
         run: |
           echo "${SSH_PRIVATE_KEY}" > private_key.pem
           chmod 600 private_key.pem
+          
           # Install k3s on the EC2 instance
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             curl -sfL https://get.k3s.io | sh -
             sudo systemctl enable k3s
             sudo systemctl start k3s
+            sleep 10  # Wait for k3s to start properly
             sudo kubectl get nodes
           EOF
 
-      - name: Set up kubectl for k3s
+      - name: Fetch Kubeconfig from EC2
         run: |
-          # Fetch the kubeconfig and set the GITHUB_ENV variable
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            sudo cat /etc/rancher/k3s/k3s.yaml > kubeconfig.yaml
-          EOF
-          echo "KUBECONFIG=$(cat kubeconfig.yaml)" >> $GITHUB_ENV
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'sudo cat /etc/rancher/k3s/k3s.yaml' > kubeconfig.yaml
+          echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
 
       - name: Get Latest Version
         run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
@@ -85,10 +85,11 @@ jobs:
 
       - name: Apply Kubernetes Deployment
         run: |
-          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
           kubectl cluster-info
           kubectl apply -f k8s/deployment.yml
 
       - name: Restart Deployment
-        run: kubectl rollout restart deployment nextjs-app
+        run: |
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          kubectl rollout restart deployment nextjs-app
