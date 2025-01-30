@@ -50,7 +50,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Deploy on k3s
+      - name: Deploy on EC2 and Configure Kubeconfig
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
@@ -59,18 +59,19 @@ jobs:
         run: |
           echo "${SSH_PRIVATE_KEY}" > private_key.pem
           chmod 600 private_key.pem
-          scp -o StrictHostKeyChecking=no -i private_key.pem shellscript.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~
 
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            if [ -f "/tmp/shellscript_executed" ]; then
-              echo "✅ shellscript.sh already executed. Skipping..."
-            else
-              chmod +x shellscript.sh
-              ./shellscript.sh
-              touch /tmp/shellscript_executed
-              echo "✅ shellscript.sh executed successfully."
-            fi
-          EOF
+          # Copy the kubeconfig file from EC2
+          scp -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/.kube/config kubeconfig.yaml
+
+          # Replace localhost with EC2 public IP in kubeconfig file
+          sed -i "s/127.0.0.1/${{ secrets.EC2_HOST }}/g" kubeconfig.yaml
+
+          # Set kubeconfig for kubectl
+          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+
+          # Verify the cluster connection
+          kubectl cluster-info
+          kubectl get nodes
 
       - name: Get Latest Version
         run: echo "VERSION=$(cat version.txt)" >> "$GITHUB_ENV"
@@ -80,6 +81,5 @@ jobs:
           sed -i "s|image: mayaworld13/helpops:.*|image: mayaworld13/helpops:${VERSION}|" k8s/deployment.yml
 
       - name: Apply Kubernetes Deployment
-        
         run: |
           kubectl apply -f k8s/deployment.yml
