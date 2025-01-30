@@ -80,7 +80,6 @@ jobs:
           sed -i "s|image: mayaworld13/helpops:.*|image: mayaworld13/helpops:${VERSION}|" k8s/deployment.yml
 
       - name: Apply Kubernetes Deployment
-        env:
-          KUBECONFIG: /home/runner/work/HelpOps-Hub/HelpOps-Hub/kubeconfig.yaml
+        
         run: |
           kubectl apply -f k8s/deployment.yml
