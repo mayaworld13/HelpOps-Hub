@@ -23,8 +23,8 @@ jobs:
             VERSION=v0
           fi
           NEW_VERSION="v$(( ${VERSION//[!0-9]/} + 1 ))"
-          echo $NEW_VERSION > version.txt
-          echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "$NEW_VERSION" > version.txt
+          echo "VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
 
       - name: Commit Updated Version
         run: |
@@ -32,7 +32,7 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add version.txt
           git commit -m "Bump version to ${VERSION}"
-          git push origin main
+          git push origin main || echo "No changes to commit."
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
@@ -60,24 +60,27 @@ jobs:
           echo "${SSH_PRIVATE_KEY}" > private_key.pem
           chmod 600 private_key.pem
           scp -o StrictHostKeyChecking=no -i private_key.pem shellscript.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~
+
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            chmod +x shellscript.sh
-            ./shellscript.sh
-            
+            if [ -f "/tmp/shellscript_executed" ]; then
+              echo "✅ shellscript.sh already executed. Skipping..."
+            else
+              chmod +x shellscript.sh
+              ./shellscript.sh
+              touch /tmp/shellscript_executed
+              echo "✅ shellscript.sh executed successfully."
+            fi
           EOF
 
-      
-
       - name: Get Latest Version
-        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+        run: echo "VERSION=$(cat version.txt)" >> "$GITHUB_ENV"
 
       - name: Update Image Tag in Deployment
         run: |
           sed -i "s|image: mayaworld13/helpops:.*|image: mayaworld13/helpops:${VERSION}|" k8s/deployment.yml
 
       - name: Apply Kubernetes Deployment
+        env:
+          KUBECONFIG: /home/runner/work/HelpOps-Hub/HelpOps-Hub/kubeconfig.yaml
         run: |
-          
           kubectl apply -f k8s/deployment.yml
-
-    
