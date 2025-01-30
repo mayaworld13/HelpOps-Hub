@@ -67,16 +67,7 @@ jobs:
             sudo kubectl get nodes
           EOF
 
-      - name: Fetch and Fix Kubeconfig
-        run: |
-          # Fetch kubeconfig from EC2
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'sudo cat /etc/rancher/k3s/k3s.yaml' > kubeconfig.yaml
-          
-          # Fix kubeconfig: Replace localhost with EC2 public IP
-          sed -i "s|server: https://127.0.0.1:6443|server: https://${{ secrets.EC2_HOST }}:6443|g" kubeconfig.yaml
-          
-          # Set environment variable
-          # echo "KUBECONFIG=$(pwd)/kubeconfig.yaml" >> $GITHUB_ENV
+      
 
       - name: Get Latest Version
         run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
@@ -90,7 +81,4 @@ jobs:
           
           kubectl apply -f k8s/deployment.yml
 
-      - name: Restart Deployment
-        run: |
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
-          kubectl rollout restart deployment nextjs-app
+    
