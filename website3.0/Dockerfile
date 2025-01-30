@@ -1,4 +1,4 @@
-# Step1: Use an official Node.js image as the base image
+# Step1:  Use an official Node.js image as the base image
 FROM node:18-alpine AS builder
 
 # Step 2: Set the working directory inside the container
