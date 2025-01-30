@@ -1,45 +1,70 @@
-name: Deploy to AWS EC2 with Docker-Compose
+name: Deploy to AWS ec2
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'website3.0/**'  # Runs only if changes are in website3.0 folder
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Deploy Docker App to AWS EC2 via SSH
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USER: ${{ secrets.EC2_USER }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Get Current Version
+        id: versioning
         run: |
-          # Add the SSH private key to the agent
-          echo "${SSH_PRIVATE_KEY}" > private_key.pem
-          chmod 600 private_key.pem
+          if [ -f version.txt ]; then
+            VERSION=$(cat version.txt)
+          else
+            VERSION=v0  # Default to v0 if file doesn't exist
+          fi
+          NEW_VERSION="v$(( ${VERSION//[!0-9]/} + 1 ))"
+          echo $NEW_VERSION > version.txt
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-          # Connect to EC2 and run deployment commands
-          ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST << 'EOF'
-            # Navigate to project folder and pull latest changes
-            rm -rf Helpops
-            git clone https://github.com/mayaworld13/HelpOps-Hub.git /home/ubuntu/Helpops
-            cd /home/ubuntu/Helpops
-            mv k8s /home/ubuntu/website/
-            mv website3.0 /home/ubuntu/website/
-            cd /home/ubuntu/website
-            
-            
-            kubectl apply -f deployment.yml
+      - name: Commit Updated Version
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add version.txt
+          git commit -m "Bump version to ${VERSION}"
+          git push origin main
 
-            
-            
-            
-          EOF
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Clean Up SSH Key
-        run: rm -f private_key.pem
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/helpops:${VERSION} ./website3.0
+          docker push ${{ secrets.DOCKER_USERNAME }}/helpops:${VERSION}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Get Latest Version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - name: Update Image Tag in Deployment
+        run: |
+          sed -i "s|image: mayaworld13/helpops:.*|image: mayaworld13/helpops:${VERSION}|" k8s/deployment.yml
+
+      - name: Apply Kubernetes Deployment
+        run: kubectl apply -f k8s/deployment.yml
+
+      - name: Restart Deployment
+        run: kubectl rollout restart deployment nextjs-app
