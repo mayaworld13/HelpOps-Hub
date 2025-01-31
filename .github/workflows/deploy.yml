@@ -30,6 +30,7 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add version.txt
           git commit -m "Bump version to $NEW_VERSION"
+          
           git push origin main || echo "No changes to commit."
 
       - name: Log in to Docker Hub
@@ -80,6 +81,7 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "github-actions"
           git commit -m "Update deployment image to version ${{ env.VERSION }}"
+          git pull origin main --rebase
           git push origin main
 
       - name: Apply Kubernetes Deployment
