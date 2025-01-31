@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: nextjs-container
-          image: mayaworld13/helpops:v4
+          image: mayaworld13/helpops:v5
           ports:
             - containerPort: 3000
           env:
