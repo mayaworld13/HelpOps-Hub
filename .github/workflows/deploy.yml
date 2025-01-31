@@ -88,7 +88,9 @@ jobs:
         env:
           KUBECONFIG: "/home/ubuntu/.kube/config"  # Adjust if necessary
         run: |
+          scp -o StrictHostKeyChecking=no -i private_key.pem k8s/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             export KUBECONFIG=/home/ubuntu/.kube/config  # Make sure this is the correct path
+            
             kubectl apply -f k8s/deployment.yml
           EOF
