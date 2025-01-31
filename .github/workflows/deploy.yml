@@ -84,7 +84,11 @@ jobs:
           git pull origin main --rebase
           git push origin main
 
-      - name: Apply Kubernetes Deployment
+      - name: Set Kubeconfig Path and Apply Kubernetes Deployment
+        env:
+          KUBECONFIG: "/home/ubuntu/.kube/config"  # Adjust if necessary
         run: |
-          export KUBECONFIG=/home/ubuntu/.kube/config
-          kubectl apply -f k8s/deployment.yml
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            export KUBECONFIG=/home/ubuntu/.kube/config  # Make sure this is the correct path
+            kubectl apply -f k8s/deployment.yml
+          EOF
