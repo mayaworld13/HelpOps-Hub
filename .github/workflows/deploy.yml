@@ -77,6 +77,8 @@ jobs:
         run: |
           sed -i "s|image: mayaworld13/helpops:.*|image: mayaworld13/helpops:${{ env.VERSION }}|" k8s/deployment.yml
           git add k8s/deployment.yml
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github-actions"
           git commit -m "Update deployment image to version ${{ env.VERSION }}"
           git push origin main
 
