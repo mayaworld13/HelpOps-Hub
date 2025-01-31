@@ -61,6 +61,7 @@ jobs:
           scp -o StrictHostKeyChecking=no -i private_key.pem shellscript.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~
 
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            rm deployment.yml
             if [ -f "/tmp/shellscript_executed" ]; then
               echo "✅ shellscript.sh already executed. Skipping..."
             else
