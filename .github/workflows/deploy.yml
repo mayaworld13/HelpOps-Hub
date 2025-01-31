@@ -29,7 +29,7 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add version.txt
-          git commit -m "Bump version to ${VERSION}"
+          git commit -m "Bump version to $NEW_VERSION"
           git push origin main || echo "No changes to commit."
 
       - name: Log in to Docker Hub
@@ -37,8 +37,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/helpops:${VERSION} ./website3.0
-          docker push ${{ secrets.DOCKER_USERNAME }}/helpops:${VERSION}
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/helpops:${{ env.VERSION }} ./website3.0
+          docker push ${{ secrets.DOCKER_USERNAME }}/helpops:${{ env.VERSION }}
 
   deploy:
     needs: build
@@ -75,9 +75,11 @@ jobs:
 
       - name: Update Image Tag in Deployment
         run: |
-          sed -i "s|image: mayaworld13/helpops:.*|image: mayaworld13/helpops:${VERSION}|" k8s/deployment.yml
+          sed -i "s|image: mayaworld13/helpops:.*|image: mayaworld13/helpops:${{ env.VERSION }}|" k8s/deployment.yml
+          git add k8s/deployment.yml
+          git commit -m "Update deployment image to version ${{ env.VERSION }}"
+          git push origin main
 
       - name: Apply Kubernetes Deployment
-        
         run: |
           kubectl apply -f k8s/deployment.yml
